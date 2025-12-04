@@ -22,7 +22,7 @@ const { Pool } = pg;
 const db = new Pool({
   connectionString:
     "postgres://postgres.wuyubslcfjbtmsylrzml:Z3SUeIc1Dpv87IS3@aws-1-us-east-1.pooler.supabase.com:6543/postgres?sslmode=require&supa=base-pooler.x",
-  ssl: { rejectUnauthorized: false },
+  ssl: { require: true, rejectUnauthorized: false },
 });
 
 db.query(
