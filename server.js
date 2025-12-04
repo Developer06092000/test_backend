@@ -16,7 +16,8 @@ app.use(fileUpload());
 
 app.use(
   cors({
-    origin: "http://localhost:5173", // or '*' for all origins
+    origin: "*", // or '*' for all origins
+    // origin: "http://localhost:5173", // or '*' for all origins
   })
 );
 
