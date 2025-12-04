@@ -1,18 +1,28 @@
-const mysql = require("mysql2");
+// const mysql = require("mysql2");
 
-const db = mysql.createConnection({
-  host: "localhost",
-  user: "root",
-  password: "",
-  database: "test",
-});
+// const db = mysql.createConnection({
+//   host: "localhost",
+//   user: "root",
+//   password: "",
+//   database: "test",
+// });
 
-db.connect((err) => {
-  if (err) {
-    console.log("MySQL ulanmadi:", err);
-    return;
-  }
-  console.log("MySQL ulandi ✔");
+// db.connect((err) => {
+//   if (err) {
+//     console.log("MySQL ulanmadi:", err);
+//     return;
+//   }
+//   console.log("MySQL ulandi ✔");
+// });
+
+const pg = require("pg");
+
+const { Pool } = pg;
+
+const db = new Pool({
+  connectionString:
+    "postgres://postgres.wuyubslcfjbtmsylrzml:Z3SUeIc1Dpv87IS3@aws-1-us-east-1.pooler.supabase.com:6543/postgres?sslmode=require&supa=base-pooler.x",
+  ssl: { rejectUnauthorized: false },
 });
 
 db.query(
