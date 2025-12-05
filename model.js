@@ -27,10 +27,14 @@ const db = new Pool({
 });
 
 db.query(
+  // `CREATE TABLE IF NOT EXISTS questions (
+  //   id INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  //   title VARCHAR(1000)
+  // )`,
   `CREATE TABLE IF NOT EXISTS questions (
-    id INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    title VARCHAR(1000)
-  )`,
+    id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    title VARCHAR(1000) NOT NULL
+)`,
   (err) => {
     if (err) return console.error(err);
 
@@ -39,13 +43,20 @@ db.query(
 );
 
 db.query(
-  ` CREATE TABLE IF NOT EXISTS answers (
-    id INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    question_id INT,
-    answer_text VARCHAR(500),
-    correct TINYINT(1) DEFAULT 0,
-    FOREIGN KEY (question_id) REFERENCES questions(id)
-  )`,
+  // ` CREATE TABLE IF NOT EXISTS answers (
+  //   id INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  //   question_id INT,
+  //   answer_text VARCHAR(500),
+  //   correct TINYINT(1) DEFAULT 0,
+  //   FOREIGN KEY (question_id) REFERENCES questions(id)
+  // )`,
+  `CREATE TABLE IF NOT EXISTS answers (
+    id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    question_id BIGINT NOT NULL,
+    answer_text VARCHAR(500) NOT NULL,
+    correct BOOLEAN DEFAULT FALSE,
+    FOREIGN KEY (question_id) REFERENCES questions(id) ON DELETE CASCADE
+)`,
   (err) => {
     if (err) return console.error(err);
 
