@@ -42,26 +42,29 @@ db.query(
   }
 );
 
-db.query(
-  // ` CREATE TABLE IF NOT EXISTS answers (
-  //   id INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-  //   question_id INT,
-  //   answer_text VARCHAR(500),
-  //   correct TINYINT(1) DEFAULT 0,
-  //   FOREIGN KEY (question_id) REFERENCES questions(id)
-  // )`,
-  `CREATE TABLE IF NOT EXISTS answers (
-    id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    question_id BIGINT NOT NULL,
-    answer_text VARCHAR(500) NOT NULL,
-    correct BOOLEAN DEFAULT FALSE,
-    FOREIGN KEY (question_id) REFERENCES questions(id) ON DELETE CASCADE
-)`,
-  (err) => {
-    if (err) return console.error(err);
+setTimeout(
+  db.query(
+    // ` CREATE TABLE IF NOT EXISTS answers (
+    //   id INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    //   question_id INT,
+    //   answer_text VARCHAR(500),
+    //   correct TINYINT(1) DEFAULT 0,
+    //   FOREIGN KEY (question_id) REFERENCES questions(id)
+    // )`,
+    `CREATE TABLE IF NOT EXISTS answers (
+      id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+      question_id BIGINT NOT NULL,
+      answer_text VARCHAR(500) NOT NULL,
+      correct BOOLEAN DEFAULT FALSE,
+      FOREIGN KEY (question_id) REFERENCES questions(id) ON DELETE CASCADE
+  )`,
+    (err) => {
+      if (err) return console.error(err);
 
-    console.log("create table answers");
-  }
+      console.log("create table answers");
+    }
+  ),
+  500
 );
 
 module.exports = db;
