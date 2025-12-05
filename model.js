@@ -28,7 +28,7 @@ const db = new Pool({
 
 db.query(
   `CREATE TABLE IF NOT EXISTS questions (
-    id INT PRIMARY KEY AUTO_INCREMENT,
+    id INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     title VARCHAR(1000)
   )`,
   (err) => {
@@ -40,7 +40,7 @@ db.query(
 
 db.query(
   ` CREATE TABLE IF NOT EXISTS answers (
-    id INT PRIMARY KEY AUTO_INCREMENT,
+    id INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     question_id INT,
     answer_text VARCHAR(500),
     correct TINYINT(1) DEFAULT 0,
