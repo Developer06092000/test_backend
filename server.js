@@ -464,6 +464,99 @@ app.delete("/questions/:id", async (req, res) => {
 //   });
 // });
 
+app.post("/get-random-questions", async (req, res) => {
+  try {
+    // 1) Tasodifiy 25 savol olish
+    const questionsResult = await db.query(`
+      SELECT id, title 
+      FROM questions
+      ORDER BY RANDOM()
+      LIMIT 25
+    `);
+
+    const questions = questionsResult.rows;
+
+    if (questions.length === 0) {
+      return res.json([]);
+    }
+
+    const questionIds = questions.map((q) => q.id);
+
+    // 2) Javoblarni olish
+    const answersResult = await db.query(
+      `
+      SELECT id, question_id, answer_text, correct
+      FROM answers
+      WHERE question_id = ANY($1)
+      ORDER BY RANDOM()
+    `,
+      [questionIds]
+    );
+
+    const answers = answersResult.rows;
+
+    // 3) Savollarga javoblarni biriktirish
+    const result = questions.map((q) => ({
+      id: q.id,
+      question: q.title,
+      answers: answers.filter((a) => a.question_id === q.id).map((a) => a.answer_text),
+    }));
+
+    res.json(result);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// mysql
+// app.post("/check-answers", (req, res) => {
+//   const userAnswers = req.body.data; // [{ id: 30, answer: "..."}]
+
+//   // console.log(typeof userAnswers, !Array.isArray(JSON.parse(userAnswers)));
+
+//   if (!Array.isArray(userAnswers)) return res.status(400).json({ error: "Invalid format" });
+
+//   const ids = userAnswers.map((a) => a.id);
+
+//   const query = `
+//     SELECT q.id, a.answer_text AS correct_answer
+//     FROM questions q
+//     JOIN answers a ON q.id = a.question_id
+//     WHERE a.correct = 1 AND q.id IN (?)
+//   `;
+
+//   db.query(query, [ids], (err, results) => {
+//     if (err) return res.status(500).json({ error: err });
+
+//     // to'g'ri javoblar obyekt shaklida
+//     const correctMap = {};
+//     results.forEach((r) => {
+//       correctMap[r.id] = r.correct_answer;
+//     });
+
+//     // javoblarni tekshiramiz
+//     let true_answer = 0;
+
+//     const checked = userAnswers.map((ua) => {
+//       const correctAnswer = correctMap[ua.id];
+
+//       const isCorrect = ua.answer.trim().toLowerCase() === correctAnswer.trim().toLowerCase();
+
+//       if (isCorrect) true_answer++;
+
+//       return {
+//         id: ua.id,
+//         answer: ua.answer,
+//         correct: isCorrect,
+//         ...(isCorrect ? {} : { correctAnswer }),
+//       };
+//     });
+
+//     res.json({ data: checked, true_answer });
+//   });
+// });
+
 app.post("/check-answers", async (req, res) => {
   try {
     const userAnswers = req.body.data; // [{ id: 30, answer: "..."}]
@@ -515,119 +608,6 @@ app.post("/check-answers", async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
-
-app.post("/get-random-questions", async (req, res) => {
-  try {
-    // 1) Tasodifiy 25 savol olish
-    const questionsResult = await db.query(`
-      SELECT id, title 
-      FROM questions
-      ORDER BY RANDOM()
-      LIMIT 25
-    `);
-
-    const questions = questionsResult.rows;
-
-    if (questions.length === 0) {
-      return res.json([]);
-    }
-
-    const questionIds = questions.map((q) => q.id);
-
-    // 2) Javoblarni olish
-    const answersResult = await db.query(
-      `
-      SELECT id, question_id, answer_text, correct
-      FROM answers
-      WHERE question_id = ANY($1)
-      ORDER BY RANDOM()
-    `,
-      [questionIds]
-    );
-
-    const answers = answersResult.rows;
-
-    // 3) Savollarga javoblarni biriktirish
-    const result = questions.map((q) => ({
-      id: q.id,
-      question: q.title,
-      answers: answers
-        .filter((a) => a.question_id === q.id)
-        .map((a) => ({
-          text: a.answer_text,
-          correct: a.correct,
-        })),
-    }));
-
-    res.json(result);
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: err.message });
-  }
-});
-
-app.post("/check-answers", (req, res) => {
-  const userAnswers = req.body.data; // [{ id: 30, answer: "..."}]
-
-  // console.log(typeof userAnswers, !Array.isArray(JSON.parse(userAnswers)));
-
-  if (!Array.isArray(userAnswers)) return res.status(400).json({ error: "Invalid format" });
-
-  const ids = userAnswers.map((a) => a.id);
-
-  const query = `
-    SELECT q.id, a.answer_text AS correct_answer
-    FROM questions q
-    JOIN answers a ON q.id = a.question_id
-    WHERE a.correct = 1 AND q.id IN (?)
-  `;
-
-  db.query(query, [ids], (err, results) => {
-    if (err) return res.status(500).json({ error: err });
-
-    // to'g'ri javoblar obyekt shaklida
-    const correctMap = {};
-    results.forEach((r) => {
-      correctMap[r.id] = r.correct_answer;
-    });
-
-    // javoblarni tekshiramiz
-    let true_answer = 0;
-
-    const checked = userAnswers.map((ua) => {
-      const correctAnswer = correctMap[ua.id];
-
-      const isCorrect = ua.answer.trim().toLowerCase() === correctAnswer.trim().toLowerCase();
-
-      if (isCorrect) true_answer++;
-
-      return {
-        id: ua.id,
-        answer: ua.answer,
-        correct: isCorrect,
-        ...(isCorrect ? {} : { correctAnswer }),
-      };
-    });
-
-    res.json({ data: checked, true_answer });
-  });
-});
-
-// app.post("/users", (req, res) => {
-//   const { name, email } = req.body;
-//   db.query("INSERT INTO users (name, email) VALUES (?, ?)", [name, email], (err, results) => {
-//     if (err) throw err;
-//     res.json({ message: "User qo'shildi", id: results.insertId });
-//   });
-// });
-
-// app.delete("/users/:id", (req, res) => {
-//   const { id } = req.params;
-//   db.query("DELETE FROM users WHERE id = ?", [id], (err) => {
-//     if (err) throw err;
-//     res.json({ message: "User o'chirildi" });
-//   });
-// });
 
 const PORT = 5000;
 app.listen(PORT, () => console.log(`Server ${PORT} da ishlayapti 🚀`));
