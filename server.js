@@ -122,34 +122,46 @@ async function parseQuestionsFile(filePath) {
 //   console.log(parseQuestionBlock(data));
 // });
 
-app.get("/questions", (req, res) => {
-  db.query("SELECT * FROM questions", (err, results) => {
-    if (err) throw err;
-    res.json(results);
-  });
+// mysql
+// app.get("/questions", (req, res) => {
+//   db.query("SELECT * FROM questions", (err, results) => {
+//     if (err) throw err;
+//     res.json(results);
+//   });
+// });
+
+app.get("/questions", async (req, res) => {
+  try {
+    const result = await db.query("SELECT * FROM questions ORDER BY id");
+    res.json(result.rows);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
-app.post("/questions", (req, res) => {
-  const { title, answers } = req.body;
+// mysql
+// app.post("/questions", (req, res) => {
+//   const { title, answers } = req.body;
 
-  db.query("INSERT INTO questions (title) VALUES (?)", [title], (err, result) => {
-    if (err) return res.status(500).json({ error: err });
+//   db.query("INSERT INTO questions (title) VALUES (?)", [title], (err, result) => {
+//     if (err) return res.status(500).json({ error: err });
 
-    const questionId = result.insertId;
+//     const questionId = result.insertId;
 
-    const values = answers.map((ans) => [questionId, ans]);
+//     const values = answers.map((ans) => [questionId, ans]);
 
-    db.query("INSERT INTO answers (question_id, answer_text) VALUES ?", [values], (err2) => {
-      if (err2) return res.status(500).json({ error: err2 });
+//     db.query("INSERT INTO answers (question_id, answer_text) VALUES ?", [values], (err2) => {
+//       if (err2) return res.status(500).json({ error: err2 });
 
-      res.json({
-        message: "Savol va javoblar qo‘shildi",
-        questionId,
-      });
-    });
-  });
-});
+//       res.json({
+//         message: "Savol va javoblar qo‘shildi",
+//         questionId,
+//       });
+//     });
+//   });
+// });
 
+// mysql
 // app.post("/upload-questions", async (req, res) => {
 //   if (!req.files || !req.files.txtfile) {
 //     return res.status(400).json({ error: "Fayl yuklanmadi" });
@@ -243,20 +255,56 @@ app.post("/upload-questions", async (req, res) => {
   }
 });
 
-app.get("/questions", (req, res) => {
-  const sql = `
-    SELECT q.id AS question_id, q.title, a.id AS answer_id, a.answer_text
-    FROM questions q
-    LEFT JOIN answers a ON q.id = a.question_id
-  `;
+// mysql
+// app.get("/questions", (req, res) => {
+//   const sql = `
+//     SELECT q.id AS question_id, q.title, a.id AS answer_id, a.answer_text
+//     FROM questions q
+//     LEFT JOIN answers a ON q.id = a.question_id
+//   `;
 
-  db.query(sql, (err, results) => {
-    if (err) return res.status(500).json({ error: err });
+//   db.query(sql, (err, results) => {
+//     if (err) return res.status(500).json({ error: err });
 
-    // Formatlash (group by question)
+//     // Formatlash (group by question)
+//     const data = {};
+
+//     results.forEach((row) => {
+//       if (!data[row.question_id]) {
+//         data[row.question_id] = {
+//           id: row.question_id,
+//           title: row.title,
+//           answers: [],
+//         };
+//       }
+
+//       if (row.answer_id) {
+//         data[row.question_id].answers.push({
+//           id: row.answer_id,
+//           text: row.answer_text,
+//         });
+//       }
+//     });
+
+//     res.json(Object.values(data));
+//   });
+// });
+
+app.get("/questions", async (req, res) => {
+  try {
+    const sql = `
+      SELECT q.id AS question_id, q.title, a.id AS answer_id, a.answer_text
+      FROM questions q
+      LEFT JOIN answers a ON q.id = a.question_id
+      ORDER BY q.id
+    `;
+
+    const result = await db.query(sql);
+    const rows = result.rows;
+
     const data = {};
 
-    results.forEach((row) => {
+    rows.forEach((row) => {
       if (!data[row.question_id]) {
         data[row.question_id] = {
           id: row.question_id,
@@ -274,91 +322,248 @@ app.get("/questions", (req, res) => {
     });
 
     res.json(Object.values(data));
-  });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
-app.put("/questions/:id", (req, res) => {
+// mysql
+// app.put("/questions/:id", (req, res) => {
+//   const { id } = req.params;
+//   const { title, answers } = req.body;
+
+//   // 1) title-ni yangilash
+//   db.query("UPDATE questions SET title = ? WHERE id = ?", [title, id], (err) => {
+//     if (err) return res.status(500).json({ error: err });
+
+//     // 2) eski answerslarni o‘chirish
+//     db.query("DELETE FROM answers WHERE question_id = ?", [id], (err2) => {
+//       if (err2) return res.status(500).json({ error: err2 });
+
+//       // 3) yangi answerslarni qo‘shish
+//       const values = answers.map((a) => [id, a]);
+
+//       db.query("INSERT INTO answers (question_id, answer_text) VALUES ?", [values], (err3) => {
+//         if (err3) return res.status(500).json({ error: err3 });
+
+//         res.json({
+//           message: "Savol va javoblar yangilandi",
+//         });
+//       });
+//     });
+//   });
+// });
+
+app.put("/questions/:id", async (req, res) => {
   const { id } = req.params;
   const { title, answers } = req.body;
 
-  // 1) title-ni yangilash
-  db.query("UPDATE questions SET title = ? WHERE id = ?", [title, id], (err) => {
-    if (err) return res.status(500).json({ error: err });
+  try {
+    // 1) Savol title-ni yangilash
+    await db.query("UPDATE questions SET title = $1 WHERE id = $2", [title, id]);
 
-    // 2) eski answerslarni o‘chirish
-    db.query("DELETE FROM answers WHERE question_id = ?", [id], (err2) => {
-      if (err2) return res.status(500).json({ error: err2 });
+    // 2) Eski javoblarni o‘chirish
+    await db.query("DELETE FROM answers WHERE question_id = $1", [id]);
 
-      // 3) yangi answerslarni qo‘shish
-      const values = answers.map((a) => [id, a]);
-
-      db.query("INSERT INTO answers (question_id, answer_text) VALUES ?", [values], (err3) => {
-        if (err3) return res.status(500).json({ error: err3 });
-
-        res.json({
-          message: "Savol va javoblar yangilandi",
-        });
+    // 3) Yangi javoblarni qo‘shish
+    if (answers.length > 0) {
+      const params = [];
+      const values = answers.map((text, index) => {
+        const base = index * 2;
+        params.push(id, text);
+        return `($${base + 1}, $${base + 2})`;
       });
-    });
-  });
+
+      const insertQuery = `
+        INSERT INTO answers (question_id, answer_text)
+        VALUES ${values.join(",")}
+      `;
+
+      await db.query(insertQuery, params);
+    }
+
+    res.json({ message: "Savol va javoblar yangilandi" });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
-app.delete("/questions/:id", (req, res) => {
+// mysql
+// app.delete("/questions/:id", (req, res) => {
+//   const { id } = req.params;
+
+//   // Avval javoblarni o‘chiramiz
+//   db.query("DELETE FROM answers WHERE question_id = ?", [id], (err) => {
+//     if (err) return res.status(500).json({ error: err });
+
+//     // So‘ng savolni o‘chiramiz
+//     db.query("DELETE FROM questions WHERE id = ?", [id], (err2) => {
+//       if (err2) return res.status(500).json({ error: err2 });
+
+//       res.json({ message: "Savol va javoblar o‘chirildi" });
+//     });
+//   });
+// });
+
+app.delete("/questions/:id", async (req, res) => {
   const { id } = req.params;
 
-  // Avval javoblarni o‘chiramiz
-  db.query("DELETE FROM answers WHERE question_id = ?", [id], (err) => {
-    if (err) return res.status(500).json({ error: err });
+  try {
+    // Avval javoblarni o‘chirish
+    await db.query("DELETE FROM answers WHERE question_id = $1", [id]);
 
-    // So‘ng savolni o‘chiramiz
-    db.query("DELETE FROM questions WHERE id = ?", [id], (err2) => {
-      if (err2) return res.status(500).json({ error: err2 });
+    // So‘ng savolni o‘chirish
+    await db.query("DELETE FROM questions WHERE id = $1", [id]);
 
-      res.json({ message: "Savol va javoblar o‘chirildi" });
-    });
-  });
+    res.json({ message: "Savol va javoblar o‘chirildi" });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
-app.post("/get-random-questions", (req, res) => {
-  // 1) Random 25 ta savol olish
-  const sqlQuestions = `
-    SELECT * FROM questions
-    ORDER BY RAND()
-    LIMIT 25
-  `;
+// mysql
+// app.post("/get-random-questions", (req, res) => {
+//   // 1) Random 25 ta savol olish
+//   const sqlQuestions = `
+//     SELECT * FROM questions
+//     ORDER BY RAND()
+//     LIMIT 25
+//   `;
 
-  db.query(sqlQuestions, (err, questions) => {
-    if (err) return res.status(500).json({ error: err });
+//   db.query(sqlQuestions, (err, questions) => {
+//     if (err) return res.status(500).json({ error: err });
 
-    if (questions.length === 0) return res.json({ questions: [] });
+//     if (questions.length === 0) return res.json({ questions: [] });
 
-    // 2) Savol id-larini olish
-    const questionIds = questions.map((q) => q.id);
+//     // 2) Savol id-larini olish
+//     const questionIds = questions.map((q) => q.id);
 
-    // 3) Javoblarni olish
-    const sqlAnswers = `
-      SELECT * FROM answers
-      WHERE question_id IN (?)
-      ORDER BY RAND()
+//     // 3) Javoblarni olish
+//     const sqlAnswers = `
+//       SELECT * FROM answers
+//       WHERE question_id IN (?)
+//       ORDER BY RAND()
+//     `;
+
+//     db.query(sqlAnswers, [questionIds], (err2, answers) => {
+//       if (err2) return res.status(500).json({ error: err2 });
+
+//       // 4) Har bir savolga javoblarni biriktirish
+//       const result = questions.map((q) => {
+//         const qAnswers = answers.filter((a) => a.question_id === q.id).map((a) => a.answer_text);
+
+//         return {
+//           id: q.id,
+//           question: q.title,
+//           answers: qAnswers,
+//         };
+//       });
+
+//       res.json(result);
+//     });
+//   });
+// });
+
+app.post("/check-answers", async (req, res) => {
+  try {
+    const userAnswers = req.body.data; // [{ id: 30, answer: "..."}]
+
+    if (!Array.isArray(userAnswers)) {
+      return res.status(400).json({ error: "Invalid format" });
+    }
+
+    const ids = userAnswers.map((a) => a.id);
+
+    // Postgres varianti: ANY($1)
+    const query = `
+      SELECT q.id, a.answer_text AS correct_answer
+      FROM questions q
+      JOIN answers a ON q.id = a.question_id
+      WHERE a.correct = TRUE 
+        AND q.id = ANY($1)
     `;
 
-    db.query(sqlAnswers, [questionIds], (err2, answers) => {
-      if (err2) return res.status(500).json({ error: err2 });
+    const result = await db.query(query, [ids]);
 
-      // 4) Har bir savolga javoblarni biriktirish
-      const result = questions.map((q) => {
-        const qAnswers = answers.filter((a) => a.question_id === q.id).map((a) => a.answer_text);
-
-        return {
-          id: q.id,
-          question: q.title,
-          answers: qAnswers,
-        };
-      });
-
-      res.json(result);
+    // to'g'ri javoblarni map qilish
+    const correctMap = {};
+    result.rows.forEach((r) => {
+      correctMap[r.id] = r.correct_answer;
     });
-  });
+
+    let true_answer = 0;
+
+    // Foydalanuvchi javoblarini tekshiramiz
+    const checked = userAnswers.map((ua) => {
+      const correctAnswer = correctMap[ua.id];
+
+      const isCorrect = ua.answer.trim().toLowerCase() === correctAnswer.trim().toLowerCase();
+
+      if (isCorrect) true_answer++;
+
+      return {
+        id: ua.id,
+        answer: ua.answer,
+        correct: isCorrect,
+        ...(isCorrect ? {} : { correctAnswer }),
+      };
+    });
+
+    res.json({ data: checked, true_answer });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post("/get-random-questions", async (req, res) => {
+  try {
+    // 1) Tasodifiy 25 savol olish
+    const questionsResult = await db.query(`
+      SELECT id, title 
+      FROM questions
+      ORDER BY RANDOM()
+      LIMIT 25
+    `);
+
+    const questions = questionsResult.rows;
+
+    if (questions.length === 0) {
+      return res.json([]);
+    }
+
+    const questionIds = questions.map((q) => q.id);
+
+    // 2) Javoblarni olish
+    const answersResult = await db.query(
+      `
+      SELECT id, question_id, answer_text, correct
+      FROM answers
+      WHERE question_id = ANY($1)
+      ORDER BY RANDOM()
+    `,
+      [questionIds]
+    );
+
+    const answers = answersResult.rows;
+
+    // 3) Savollarga javoblarni biriktirish
+    const result = questions.map((q) => ({
+      id: q.id,
+      question: q.title,
+      answers: answers
+        .filter((a) => a.question_id === q.id)
+        .map((a) => ({
+          text: a.answer_text,
+          correct: a.correct,
+        })),
+    }));
+
+    res.json(result);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: err.message });
+  }
 });
 
 app.post("/check-answers", (req, res) => {
