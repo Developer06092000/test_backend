@@ -22,8 +22,10 @@ app.use(
 );
 
 async function parseQuestionsFile(filePath) {
+  // async function parseQuestionsFile(filePath) {
   // 1. Faylni o‘qish
-  const raw = await fs.readFile(filePath, "utf8");
+  // const raw = await fs.readFile(filePath, "utf8");
+  const raw = await filePath;
 
   // 2. ++++ bo‘yicha bloklarga ajratish
   const blocks = raw
@@ -154,13 +156,16 @@ app.post("/upload-questions", async (req, res) => {
   }
 
   const txtFile = req.files.txtfile;
-  const filePath = `./temp_${Date.now()}.txt`;
+  // const filePath = `./temp_${Date.now()}.txt`;
+  const textContent = txtFile.data.toString("utf8");
 
   // Faylni vaqtincha saqlash
-  await txtFile.mv(filePath);
+  // await txtFile.mv(filePath);
+  await textContent;
 
   try {
-    const questions = await parseQuestionsFile(filePath);
+    // const questions = await parseQuestionsFile(filePath);
+    const questions = await parseQuestionsFile(textContent);
 
     // Har bir savol va javobni DBga qo‘shish
     for (let q of questions) {
