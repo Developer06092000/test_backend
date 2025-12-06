@@ -150,47 +150,95 @@ app.post("/questions", (req, res) => {
   });
 });
 
+// app.post("/upload-questions", async (req, res) => {
+//   if (!req.files || !req.files.txtfile) {
+//     return res.status(400).json({ error: "Fayl yuklanmadi" });
+//   }
+
+//   const txtFile = req.files.txtfile;
+//   const textContent = txtFile.data.toString("utf8");
+
+//   try {
+//     const questions = await parseQuestionsFile(textContent);
+
+//     for (let q of questions) {
+//       // 1) Insert question
+//       const questionInsert = await db.query(
+//         `INSERT INTO questions (title) VALUES ($1) RETURNING id`,
+//         [q.question]
+//       );
+
+//       const questionId = questionInsert.rows[0].id;
+
+//       // 2) Insert answers
+//       const values = [];
+//       const params = [];
+
+//       q.answers.forEach((a, index) => {
+//         const baseIndex = index * 3;
+//         params.push(questionId, a.text, a.correct);
+//         values.push(`($${baseIndex + 1}, $${baseIndex + 2}, $${baseIndex + 3})`);
+//       });
+
+//       const sql = `
+//         INSERT INTO answers (question_id, answer_text, correct)
+//         VALUES ${values.join(",")}
+//       `;
+
+//       await db.query(sql, params);
+//     }
+
+//     res.json({
+//       message: "Savollar va javoblar muvaffaqiyatli qo‘shildi",
+//       count: questions.length
+//     });
+//   } catch (err) {
+//     console.log(err);
+//     res.status(500).json({ error: err.message });
+//   }
+// });
+
 app.post("/upload-questions", async (req, res) => {
   if (!req.files || !req.files.txtfile) {
     return res.status(400).json({ error: "Fayl yuklanmadi" });
   }
 
   const txtFile = req.files.txtfile;
-  // const filePath = `./temp_${Date.now()}.txt`;
   const textContent = txtFile.data.toString("utf8");
 
-  // Faylni vaqtincha saqlash
-  // await txtFile.mv(filePath);
-  await textContent;
-
   try {
-    // const questions = await parseQuestionsFile(filePath);
     const questions = await parseQuestionsFile(textContent);
 
-    // Har bir savol va javobni DBga qo‘shish
     for (let q of questions) {
-      const result = await new Promise((resolve, reject) => {
-        db.query("INSERT INTO questions (title) VALUES (?)", [q.question], (err, resQ) => {
-          if (err) reject(err);
-          else resolve(resQ);
-        });
+      // 1) Insert question
+      const questionInsert = await db.query(`INSERT INTO questions (title) VALUES ($1) RETURNING id`, [q.question]);
+
+      const questionId = questionInsert.rows[0].id;
+
+      // 2) Insert answers
+      const values = [];
+      const params = [];
+
+      q.answers.forEach((a, index) => {
+        const baseIndex = index * 3;
+        params.push(questionId, a.text, a.correct);
+        values.push(`($${baseIndex + 1}, $${baseIndex + 2}, $${baseIndex + 3})`);
       });
 
-      const questionId = result.insertId;
+      const sql = `
+        INSERT INTO answers (question_id, answer_text, correct)
+        VALUES ${values.join(",")}
+      `;
 
-      // Javoblar massivini tayyorlash
-      const values = q.answers.map((a) => [questionId, a.text, a.correct ? 1 : 0]);
-
-      await new Promise((resolve, reject) => {
-        db.query("INSERT INTO answers (question_id, answer_text, correct) VALUES ?", [values], (err2) => {
-          if (err2) reject(err2);
-          else resolve();
-        });
-      });
+      await db.query(sql, params);
     }
 
-    res.json({ message: "Savollar va javoblar muvaffaqiyatli qo‘shildi", count: questions.length });
+    res.json({
+      message: "Savollar va javoblar muvaffaqiyatli qo‘shildi",
+      count: questions.length,
+    });
   } catch (err) {
+    console.log(err);
     res.status(500).json({ error: err.message });
   }
 });

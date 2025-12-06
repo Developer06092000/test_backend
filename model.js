@@ -32,7 +32,7 @@ async function initTables() {
       CREATE TABLE IF NOT EXISTS questions (
         id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
         title VARCHAR(1000) NOT NULL
-      )
+      );
     `);
     console.log("questions created");
 
@@ -43,7 +43,7 @@ async function initTables() {
         answer_text VARCHAR(500) NOT NULL,
         correct BOOLEAN DEFAULT FALSE,
         FOREIGN KEY (question_id) REFERENCES questions(id) ON DELETE CASCADE
-      )
+      );
     `);
     console.log("answers created");
   } catch (err) {
