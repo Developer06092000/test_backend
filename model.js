@@ -19,12 +19,30 @@ const pg = require("pg");
 
 const { Pool } = pg;
 
-const db = new Pool({
-  connectionString:
-    // "postgres://postgres.wuyubslcfjbtmsylrzml:Z3SUeIc1Dpv87IS3@aws-1-us-east-1.pooler.supabase.com:6543/postgres?sslmode=require&supa=base-pooler.x",
-    "postgres://postgres.wuyubslcfjbtmsylrzml:Z3SUeIc1Dpv87IS3@aws-1-us-east-1.pooler.supabase.com:5432/postgres",
-  ssl: { require: true, rejectUnauthorized: false },
-});
+let db;
+
+if (!global.pgPool) {
+  global.pgPool = new Pool({
+    connectionString:
+      // "postgres://postgres.wuyubslcfjbtmsylrzml:Z3SUeIc1Dpv87IS3@aws-1-us-east-1.pooler.supabase.com:6543/postgres?sslmode=require&supa=base-pooler.x",
+      "postgres://postgres.wuyubslcfjbtmsylrzml:Z3SUeIc1Dpv87IS3@aws-1-us-east-1.pooler.supabase.com:6543/postgres",
+    max: 5, // juda muhim
+    idleTimeoutMillis: 30000,
+    connectionTimeoutMillis: 2000,
+  });
+}
+
+db = global.pgPool;
+
+// const db = new Pool({
+//   connectionString:
+//     // "postgres://postgres.wuyubslcfjbtmsylrzml:Z3SUeIc1Dpv87IS3@aws-1-us-east-1.pooler.supabase.com:6543/postgres?sslmode=require&supa=base-pooler.x",
+//     "postgres://postgres.wuyubslcfjbtmsylrzml:Z3SUeIc1Dpv87IS3@aws-1-us-east-1.pooler.supabase.com:6543/postgres",
+//   max: 5,
+//   idleTimeoutMillis: 30000,
+//   connectionTimeoutMillis: 2000,
+//   ssl: { require: true, rejectUnauthorized: false },
+// });
 
 async function initTables() {
   try {
