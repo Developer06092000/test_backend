@@ -30,6 +30,10 @@ if (!global.pgPool) {
     max: 5, // juda muhim
     idleTimeoutMillis: 30000,
     connectionTimeoutMillis: 2000,
+    ssl: {
+    require: true,
+    rejectUnauthorized: false,
+  },
   });
 }
 
