@@ -30,10 +30,6 @@ if (!global.pgPool) {
     max: 5, // juda muhim
     idleTimeoutMillis: 30000,
     connectionTimeoutMillis: 2000,
-    ssl: {
-    require: true,
-    rejectUnauthorized: false,
-  },
   });
 }
 
@@ -74,6 +70,6 @@ async function initTables() {
   }
 }
 
-initTables();
+initTables().then(res=>console.log("created connection")).catch(err=>console.log(err));
 
 module.exports = db;
