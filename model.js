@@ -26,13 +26,11 @@ if (!global.pgPool) {
     connectionString:
       // "postgres://postgres.wuyubslcfjbtmsylrzml:Z3SUeIc1Dpv87IS3@aws-1-us-east-1.pooler.supabase.com:6543/postgres?sslmode=require&supa=base-pooler.x",
       // "postgres://postgres.wuyubslcfjbtmsylrzml:Z3SUeIc1Dpv87IS3@aws-1-us-east-1.pooler.supabase.com:6543/postgres",
-         "postgres://postgres.gxdhjnoxajfntwlbuuqv:l015gEUy8lB30zYb@aws-1-us-east-1.pooler.supabase.com:5432/postgres?sslmode=require",
-    ssl: {
-    rejectUnauthorized: false,
-  },
+         "postgres://postgres.gxdhjnoxajfntwlbuuqv:l015gEUy8lB30zYb@aws-1-us-east-1.pooler.supabase.com:5432/postgres",
+    
     max: 5, // juda muhim
     idleTimeoutMillis: 30000,
-    connectionTimeoutMillis: 5000,
+    connectionTimeoutMillis: 10000,
   });
 }
 
