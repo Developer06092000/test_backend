@@ -70,6 +70,6 @@ async function initTables() {
   }
 }
 
-await initTables();
+initTables();
 
 module.exports = db;
