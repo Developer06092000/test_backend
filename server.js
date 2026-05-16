@@ -421,6 +421,20 @@ app.delete("/questions/:id", async (req, res) => {
   }
 });
 
+app.delete("/questions/deleteAll", async (req, res) => {
+  try {
+    // Avval barcha javoblarni o‘chirish
+    await db.query("DELETE FROM answers");
+
+    // So‘ng barcha savollarni o‘chirish
+    await db.query("DELETE FROM questions");
+
+    res.json({ message: "Barcha savollar va javoblar o‘chirildi" });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // mysql
 // app.post("/get-random-questions", (req, res) => {
 //   // 1) Random 25 ta savol olish
