@@ -405,6 +405,21 @@ app.put("/questions/:id", async (req, res) => {
 //   });
 // });
 
+app.delete("/questions/deleteAll", async (req, res) => {
+  try {
+    // Avval barcha javoblarni o‘chirish
+    await db.query("DELETE FROM answers");
+
+    // So‘ng barcha savollarni o‘chirish
+    await db.query("DELETE FROM questions");
+
+    res.json({ message: "Barcha savollar va javoblar o‘chirildi" });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+
 app.delete("/questions/:id", async (req, res) => {
   const { id } = req.params;
 
@@ -416,20 +431,6 @@ app.delete("/questions/:id", async (req, res) => {
     await db.query("DELETE FROM questions WHERE id = $1", [id]);
 
     res.json({ message: "Savol va javoblar o‘chirildi" });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-app.delete("/questions/deleteAll", async (req, res) => {
-  try {
-    // Avval barcha javoblarni o‘chirish
-    await db.query("DELETE FROM answers");
-
-    // So‘ng barcha savollarni o‘chirish
-    await db.query("DELETE FROM questions");
-
-    res.json({ message: "Barcha savollar va javoblar o‘chirildi" });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
